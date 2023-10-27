@@ -10,13 +10,14 @@ type Storage interface {
 	Add(userId uint64) error
 	UpdTitle(userId uint64, title string) error
 	UpdDescription(userId uint64, description string) error
-	UpdDeadline(userId uint64, deadline, createTime uint64) error
+	UpdDeadline(userId uint64, deadline, createTime uint64, notifCount uint64) error
 	Delete(userId uint64, title string) error
 	CloseTask(userId uint64, title string) error
 	Uncompl(userId uint64) ([]Task, error)
 	Compl(userId uint64) ([]Task, error)
 	AllTasks(userId uint64) ([]Task, error)
 
+	SetNotifCount(taskId uint64, notifCount uint64) error
 	TasksForNotif(curTime uint64, timeDiff uint64, notifCount uint64) ([]Task, error)
 }
 
