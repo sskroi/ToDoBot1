@@ -66,7 +66,7 @@ func (p *Processor) Process(event events.Event) error {
 	}
 
 	if err != nil {
-		e.Wrap("can't process event", err)
+		return e.Wrap("can't process event", err)
 	}
 
 	return nil
