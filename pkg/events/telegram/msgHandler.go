@@ -294,7 +294,12 @@ func (p *Processor) adding3(text string, meta Meta) error {
 		return nil
 	}
 
-	err = p.storage.UpdDeadline(meta.UserId, deadlineUnixTime, meta.Date)
+	notifCnt, err := getCorrectNotifCount(deadlineUnixTime)
+	if err != nil {
+		return err
+	}
+
+	err = p.storage.UpdDeadline(meta.UserId, deadlineUnixTime, meta.Date, notifCnt)
 	if err != nil {
 		return e.Wrap("can't set deadline", err)
 	}
@@ -388,5 +393,24 @@ func (p *Processor) deleteTask(text string, meta Meta) error {
 	}
 
 	return nil
+}
 
+func getCorrectNotifCount(time uint64) (uint64, error) {
+	curTime, err := getCurMskTime()
+	if err != nil {
+		return 0, err
+	}
+
+	var res uint64 = 0
+
+	for _, v := range ctrlPoints {
+		notifCnt := v[0]
+		unixTime := v[1]
+		if time-curTime <= unixTime {
+			res = notifCnt + 1
+			break
+		}
+	}
+
+	return res, nil
 }

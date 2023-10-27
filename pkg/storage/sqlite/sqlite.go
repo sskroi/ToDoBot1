@@ -170,16 +170,16 @@ func (s *SqliteStorage) UpdDescription(userId uint64, description string) error 
 }
 
 // UpdDeadline sets deadline and create_time for user's cur_task
-func (s *SqliteStorage) UpdDeadline(userId uint64, deadline, createTime uint64) error {
+func (s *SqliteStorage) UpdDeadline(userId uint64, deadline, createTime uint64, notifCount uint64) error {
 	taskId, err := s.getCurTask(userId)
 	if err != nil {
 		return err
 	}
 
 	qForUpdDeadlineAndCreateTime :=
-		`UPDATE tasks SET create_time = ?, deadline = ? WHERE task_id = ?;`
+		`UPDATE tasks SET create_time = ?, deadline = ?, notif_count = ? WHERE task_id = ?;`
 
-	_, err = s.db.Exec(qForUpdDeadlineAndCreateTime, createTime, deadline, taskId)
+	_, err = s.db.Exec(qForUpdDeadlineAndCreateTime, createTime, deadline, notifCount, taskId)
 	if err != nil {
 		return e.Wrap("can't update create time and deadline in `tasks`", err)
 	}
@@ -279,7 +279,7 @@ func (s *SqliteStorage) SetNotifCount(taskId uint64, notifCount uint64) error {
 }
 
 func (s *SqliteStorage) TasksForNotif(curTime uint64, timeDiff uint64, notifCount uint64) ([]storage.Task, error) {
-	qForGetTasks := `SELECT * FROM tasks WHERE ((? - deadline) <= ?) AND notif_count = ?;`
+	qForGetTasks := `SELECT * FROM tasks WHERE ((deadline - ?) <= ?) AND notif_count = ? AND done = 0 AND deadline != 0;`
 
 	rows, err := s.db.Query(qForGetTasks, curTime, timeDiff, notifCount)
 	if err != nil {

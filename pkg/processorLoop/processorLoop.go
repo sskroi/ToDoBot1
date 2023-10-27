@@ -31,7 +31,10 @@ func (p *ProcessorLoop) Start() error {
 
 		select {
 		case <-ticker.C:
-			doNotification()
+			err := p.processor.SendNotifications()
+			if err != nil {
+				log.Printf("__ERR__ ProcessorLoop: %s", err.Error())
+			}
 		default:
 			// empty block
 		}

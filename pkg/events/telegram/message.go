@@ -14,11 +14,6 @@ const (
 	startCmd = "/start"
 )
 
-/*
-commandsMsg = "/help - информация о боте\n/uncompl - незавершённые задачи\n/close - завершить выполнение задачи\n/add - добавить задачу\n/delete - удалить задачу\n/all - посмотреть все задачи\n/compl - завёршенные задачи"
-
-*/
-
 // Text for /help and /start cmd
 const (
 	helpMsg  = "🤖 Бот предоставляет реализацию простого 📌ToDo списка. Вы можете добавлять задачи, удалять, менять статус выполнения, а также просматривать список ваших задач.\n\n❗️ Вы можете * <code>cкопировать</code> * название задачи <code>кликнув</code> на него.\n\nВсё взаимодействие с ботом осуществляется с помощью интерактивного меню ⤵️"
@@ -123,4 +118,26 @@ func getDoneStatus(status bool) string {
 	} else {
 		return "Выполнено"
 	}
+}
+
+func getNotifMsg(task storage.Task, curTime uint64) string {
+	var res string = ""
+
+	res += "❗️ До дедлайна: "
+
+	duration := time.Unix(int64(task.Deadline), 0).Sub(time.Unix(int64(curTime), 0))
+	days := int(duration.Hours()) / 24
+	hours := int(duration.Hours()) % 24
+	minutes := int(duration.Minutes()) % 60
+
+	if days != 0 {
+		res += fmt.Sprintf("%d days, ", days)
+	}
+
+	res += fmt.Sprintf("%d hours, ", hours)
+	res += fmt.Sprintf("%d minutes\n\n", minutes)
+
+	res += makeTasksString([]storage.Task{task})
+
+	return res
 }
