@@ -19,12 +19,21 @@ func New(processor events.Processor, batchSize int) ProcessorLoop {
 }
 
 func (p *ProcessorLoop) Start() error {
+	ticker := time.NewTicker(30 * time.Second)
+
 	for {
 		gotEvents, err := p.processor.Fetch(p.batchSize)
 		if err != nil {
 			log.Printf("__ERR ProcessorLoop: %s", err.Error())
 
 			continue
+		}
+
+		select {
+		case <-ticker.C:
+			doNotification()
+		default:
+			// empty block
 		}
 
 		if len(gotEvents) == 0 {
