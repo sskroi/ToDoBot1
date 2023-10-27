@@ -54,6 +54,7 @@ func (s *SqliteStorage) Init() error {
 		create_time INTEGER DEFAULT 0,
 		deadline INTEGER DEFAULT 0,
 		done INTEGER NOT NULL DEFAULT 0,
+		notif_count INTEGER DEFAULT 0,
 		UNIQUE (user_id, title)
 	);`
 	if _, err := s.db.Exec(queryTasks); err != nil {
@@ -266,6 +267,33 @@ func (s *SqliteStorage) AllTasks(userId uint64) ([]storage.Task, error) {
 	return tasks, nil
 }
 
+func (s *SqliteStorage) SetNotifCount(taskId uint64, notifCount uint64) error {
+	qForSetNotifCount := `UPDATE tasks SET notif_count = ? WHERE task_id = ?;`
+
+	_, err := s.db.Exec(qForSetNotifCount, notifCount, taskId)
+	if err != nil {
+		return e.Wrap("can't set notif count", err)
+	}
+
+	return nil
+}
+
+func (s *SqliteStorage) TasksForNotif(curTime uint64, timeDiff uint64, notifCount uint64) ([]storage.Task, error) {
+	qForGetTasks := `SELECT * FROM tasks WHERE ((? - deadline) <= ?) AND notif_count = ?;`
+
+	rows, err := s.db.Query(qForGetTasks, curTime, timeDiff, notifCount)
+	if err != nil {
+		return nil, e.Wrap("can't get tasks for notification", err)
+	}
+
+	tasks, err := fetchTasksFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
 // getTask returns slice of uncompleted tasks for user if qFilter = 0
 // and slice of completed tasks if qFilter = 1.
 func (s *SqliteStorage) getTasks(userId uint64, qFilter int) ([]storage.Task, error) {
@@ -289,6 +317,16 @@ func (s *SqliteStorage) getTasks(userId uint64, qFilter int) ([]storage.Task, er
 	if err != nil {
 		return nil, e.Wrap("can't select uncomp tasks", err)
 	}
+
+	tasks, err := fetchTasksFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func fetchTasksFromRows(rows *sql.Rows) ([]storage.Task, error) {
 	defer rows.Close()
 
 	tasks := make([]storage.Task, 0)
@@ -296,7 +334,7 @@ func (s *SqliteStorage) getTasks(userId uint64, qFilter int) ([]storage.Task, er
 	for rows.Next() {
 		var newT = storage.Task{}
 		err := rows.Scan(&newT.TaskId, &newT.UserId, &newT.Title,
-			&newT.Description, &newT.CreateTime, &newT.Deadline, &newT.Done)
+			&newT.Description, &newT.CreateTime, &newT.Deadline, &newT.Done, &newT.NotifCount)
 		if err != nil {
 			return nil, e.Wrap("can't scan tasks", err)
 		}

@@ -16,6 +16,8 @@ type Storage interface {
 	Uncompl(userId uint64) ([]Task, error)
 	Compl(userId uint64) ([]Task, error)
 	AllTasks(userId uint64) ([]Task, error)
+
+	TasksForNotif(curTime uint64, timeDiff uint64, notifCount uint64) ([]Task, error)
 }
 
 // Types of state
@@ -42,6 +44,7 @@ type Task struct {
 	CreateTime  uint64 `db:"create_time"`
 	Deadline    uint64 `db:"deadline"`
 	Done        bool   `db:"done"`
+	NotifCount  uint64 `db:"notif_count"`
 }
 
 type User struct {
